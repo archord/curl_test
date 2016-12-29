@@ -12,6 +12,7 @@
 #include "data.h"
 
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+static int joinStr(char *s1, char *s2, char **s3);
 
 /**
  * 
@@ -21,64 +22,139 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
  * @param gridId 缺省为""
  * @param fieldId 缺省为""
  */
-DataTransfer::DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId) {
-  this->initParameter(groupId, unitId, ccdId, gridId, fieldId,
-          "http://127.0.0.1/", OT1_LIST_URL, OT2_CUT_IMAGE_UPLOAD_URL, IMAGE_QUALITY_URL,
-          LOOK_BACK_URL, OT2_CUT_IMAGE_LIST_DOWNLOAD_URL, OT2_TMPL_CUT_IMAGE_LIST_DOWNLOAD_URL, "");
-}
-
 DataTransfer::DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl) {
-  this->initParameter(groupId, unitId, ccdId, gridId, fieldId,
-          rootUrl, OT1_LIST_URL, OT2_CUT_IMAGE_UPLOAD_URL, IMAGE_QUALITY_URL,
-          LOOK_BACK_URL, OT2_CUT_IMAGE_LIST_DOWNLOAD_URL, OT2_TMPL_CUT_IMAGE_LIST_DOWNLOAD_URL, "");
-}
-
-DataTransfer::DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId,
-        char *rootUrl,
-        char *sendOT1ListUrl,
-        char *sendOT2CutImageUrl,
-        char *sendImageQualityFileUrl,
-        char *sendLookBackResultUrl,
-        char *getOT2CutImageListUrl,
-        char *getOT2TmplCutImageListUrl,
-        char *tmpPath) {
-  this->initParameter(groupId, unitId, ccdId, gridId, fieldId,
-          rootUrl, sendOT1ListUrl, sendOT2CutImageUrl, sendImageQualityFileUrl,
-          sendLookBackResultUrl, getOT2CutImageListUrl, getOT2TmplCutImageListUrl, tmpPath);
+  this->initParameter(groupId, unitId, ccdId, gridId, fieldId, rootUrl);
 }
 
 DataTransfer::~DataTransfer() {
+  if (this->ot1ListUrl != NULL) {
+    free(this->ot1ListUrl);
+  }
+  if (this->getOt2CutImageListUrl != NULL) {
+    free(this->getOt2CutImageListUrl);
+  }
+  if (this->imageQualityFileUrl != NULL) {
+    free(this->imageQualityFileUrl);
+  }
+  if (this->lookBackResultUrl != NULL) {
+    free(this->lookBackResultUrl);
+  }
+  if (this->sendOt2CutImageListUrl != NULL) {
+    free(this->sendOt2CutImageListUrl);
+  }
+  if (this->ot2TmplCutImageListUrl != NULL) {
+    free(this->ot2TmplCutImageListUrl);
+  }
+  if (this->sendLogMsgUrl != NULL) {
+    free(this->sendLogMsgUrl);
+  }
   if (this->tmpChunk != NULL) {
     free(this->tmpChunk);
   }
 }
 
-void DataTransfer::initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId,
-        char *rootUrl,
-        char *sendOT1ListUrl,
-        char *sendOT2CutImageUrl,
-        char *sendImageQualityFileUrl,
-        char *sendLookBackResultUrl,
-        char *getOT2CutImageListUrl,
-        char *getOT2TmplCutImageListUrl,
-        char *tmpPath) {
+void DataTransfer::initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId) {
   this->groupId = groupId;
   this->unitId = unitId;
   this->ccdId = ccdId;
   this->gridId = gridId;
   this->fieldId = fieldId;
-
-  this->tmpPath = tmpPath; ///mnt/gwacMem/
   this->rootUrl = rootUrl;
-  this->ot1ListUrl = sendOT1ListUrl;
-  this->ot2CutImageUrl = sendOT2CutImageUrl;
-  this->imageQualityFileUrl = sendImageQualityFileUrl;
-  this->lookBackResultUrl = sendLookBackResultUrl;
-  this->ot2CutImageListUrl = getOT2CutImageListUrl;
-  this->ot2TmplCutImageListUrl = getOT2TmplCutImageListUrl;
+
+  joinStr(rootUrl, GET_OT1_LIST_URL, &this->ot1ListUrl);
+  joinStr(rootUrl, GET_OT2_CUT_IMAGE_LIST_URL, &this->getOt2CutImageListUrl);
+  joinStr(rootUrl, SEND_IMAGE_QUALITY_URL, &this->imageQualityFileUrl);
+  joinStr(rootUrl, SEND_LOOK_BACK_URL, &this->lookBackResultUrl);
+  joinStr(rootUrl, SEND_OT2_CUT_IMAGE_LIST_URL, &this->sendOt2CutImageListUrl);
+  joinStr(rootUrl, GET_OT2_CUT_IMAGE_REF_LIST_URL, &this->ot2TmplCutImageListUrl);
+  joinStr(rootUrl, SEND_LOG_MSG_URL, &this->sendLogMsgUrl);
+  joinStr(rootUrl, SEND_MAG_CALIBRATION_URL, &this->sendMagCalibrationUrl);
+  joinStr(rootUrl, SEND_FITS_PREVIEW_URL, &this->sendFitsPreviewUrl);
 
   this->tmpChunk = (struct CurlCache *) malloc(sizeof (struct CurlCache));
 
+}
+
+int DataTransfer::sendOT1ListFile(char *path, char *fName, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  files.insert(std::pair<string, string>("ot1List", fName));
+  return uploadDatas(this->ot1ListUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendOT2CutImage(char *path, vector<char *> &fNames, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+
+  size_t len = fNames.size();
+  for (size_t i = 0; i < len; i++) {
+    files.insert(std::pair<string, string>("cutImage", fNames[i]));
+  }
+  return uploadDatas(this->sendOt2CutImageListUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendOT2CutImageRef(char *path, vector<char *> &fNames, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+
+  size_t len = fNames.size();
+  for (size_t i = 0; i < len; i++) {
+    files.insert(std::pair<string, string>("cutImageRef", fNames[i]));
+  }
+  return uploadDatas(this->sendOt2CutImageListUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendImageQualityFile(char *path, char *fName, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  files.insert(std::pair<string, string>("imgQuality", fName));
+  return uploadDatas(this->imageQualityFileUrl, path, params, files, statusstr);
+}
+
+//lookBackResultUrl
+
+int DataTransfer::sendLookBackResult(char *ot2Name, int flag, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  params.insert(std::pair<string, string>("ot2Name", ot2Name));
+  params.insert(std::pair<string, string>("flag", flag));
+  return uploadDatas(this->lookBackResultUrl, "", params, files, statusstr);
+}
+
+int DataTransfer::sendFitsPreview(char *path, char *fName, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  files.insert(std::pair<string, string>("fitsPreview", fName));
+  return uploadDatas(this->sendFitsPreviewUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendMagCalibrationFile(char *path, char *fName, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  files.insert(std::pair<string, string>("magCalibration", fName));
+  return uploadDatas(this->sendMagCalibrationUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendLogMsg(ST_MSGBUF *msg, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  if (msg->msgtype == ENUM_MSG.ERROR) {
+    params.insert(std::pair<string, string>("msgType", "error"));
+  }else if (msg->msgtype == ENUM_MSG.STATE) {
+    params.insert(std::pair<string, string>("msgType", "state"));
+  }
+  params.insert(std::pair<string, string>("msgCode", msg->msgmark));
+  params.insert(std::pair<string, string>("msgDate", msg->msgmark));
+  params.insert(std::pair<string, string>("msgContent", msg->msgtext));
+  return uploadDatas(this->sendLogMsgUrl, "", params, files, statusstr);
 }
 
 /**
@@ -287,3 +363,15 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 
   return realsize;
 }
+
+static int joinStr(char *s1, char *s2, char **s3) {
+
+  *s3 = malloc(strlen(s1) + strlen(s2) + 1);
+  if (*s3 == NULL) {
+    return GWAC_MALLOC_ERROR;
+  }
+  strcpy(*s3, s1);
+  strcat(*s3, s2);
+
+  return GWAC_SUCCESS;
+} 

@@ -28,6 +28,36 @@
 
 using namespace std;
 
+void print_time();
+void getDiskSize(char *path);
+void sendData();
+
+int main(int argc, char *argv[]) {
+
+//  sendData();
+  print_time();
+
+
+  return 0;
+}
+
+void testDataTransfer(){
+  
+  char *rootPath = "/home/xy/gwac_data/test/";
+  char *ot1list = "G001_001_objt_161230T110412.crsot1"; //"G001_001_objt_161230T110412.subot1"
+  
+  char *groupId = "g001";
+  char *unitId = "u001";
+  char *ccdId = "c001";
+  char *gridId = "g001";
+  char *fieldId = "f001";
+  char statusstr[10240];
+  DataTransfer *gt = new DataTransfer(groupId, unitId, ccdId, gridId, fieldId, rootPath);
+
+  printf("%s\n", statusstr);
+}
+
+
 /**getDiskSize("/home/xy/Downloads/myresource");*/
 void getDiskSize(char *path) {
   struct statvfs fiData;
@@ -95,13 +125,4 @@ void print_time() {
   strftime(time_string, sizeof (time_string), "%Y-%m-%dT%H:%M:%S", ptm);
   milliseconds = tv.tv_usec / 1000;
   printf("%s.%03ld\n", time_string, milliseconds);
-}
-
-int main(int argc, char *argv[]) {
-
-//  sendData();
-  print_time();
-
-
-  return 0;
 }

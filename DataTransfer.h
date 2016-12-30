@@ -56,41 +56,116 @@ public:
   char *sendMagCalibrationUrl;
   char *sendFitsPreviewUrl;
 
-  DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId);
   DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl);
-  DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId,
-          char *rootUrl, char *sendOT1ListUrl, char *sendOT2CutImageUrl,
-          char *sendImageQualityFileUrl, char *sendLookBackResultUrl,
-          char *getOT2CutImageListUrl, char *getOT2TmplCutImageListUrl, char *tmpPath);
   virtual ~DataTransfer();
 
-  void initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId,
-          char *rootUrl, char *sendOT1ListUrl, char *sendOT2CutImageUrl,
-          char *sendImageQualityFileUrl, char *sendLookBackResultUrl,
-          char *getOT2CutImageListUrl, char *getOT2TmplCutImageListUrl, char *tmpPath);
 
-  /*send data to server*/
+  /**
+   * 向服务器发送OT1列表文件
+   * @param path OT1列表文件路径
+   * @param fName OT1列表文件名，命名规范：原始图像名.ot1list
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendOT1ListFile(char *path, char *fName, char statusstr[]);
+
+  /**
+   * 向服务器发送OT2切图文件
+   * @param path OT2切图文件路径
+   * @param fNames OT2切图文件名数组，OT2切图命名规范：按照切图文件列表中给出的名称命名，如OT2切图名称.fit，OT2切图名称.jpg
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendOT2CutImage(char *path, vector<char *> &fNames, char statusstr[]);
+
+  /**
+   * 向服务器发送OT2模板切图文件
+   * @param path OT2模板切图文件路径
+   * @param fNames OT2模板切图文件名数组,OT2模板切图命名规范：按照切图文件列表中给出的名称+模板制作日期命名，OT2名称_ref_YYYYmmddThhMMss.fit，OT2名称_ref_YYYYmmddThhMMss.jpg
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendOT2CutImageRef(char *path, vector<char *> &fNames, char statusstr[]);
+
+  /**
+   * 向服务器发送图像参数文件
+   * @param path 图像参数文件路径
+   * @param fName 图像参数文件名，图像参数文件命名规范：原始图像名.imgqlity
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendImageQualityFile(char *path, char *fName, char statusstr[]);
+
+  /**
+   * 向服务器发送OT2回看结果，
+   * @param ot2Name OT2名
+   * @param flag OT2回看结果：0结果未知，1回看结果为OT，2回看结果为FOT
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendLookBackResult(char *ot2Name, int flag, char statusstr[]);
+
+  /**
+   * 向服务器发送FITS预览图像文件
+   * @param path FITS预览图像文件路径
+   * @param fName FITS预览图像文件名, 命名规范:原始图像名.jpg
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendFitsPreview(char *path, char *fName, char statusstr[]);
+
+  /**
+   * 向服务器发送星等标定文件
+   * @param path 星等标定文件路径
+   * @param fName 星等标定文件名, 命名规范:原始图像名.magclb
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendMagCalibrationFile(char *path, char *fName, char statusstr[]);
+
+  /**
+   * 向服务器发送日志消息
+   * @param msg 日志消息结构体
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int sendLogMsg(ST_MSGBUF *msg, char statusstr[]);
 
-  /*get data from server*/
-  /*orig image name, image x coordinate, image y coordinate, cut image name*/
+  /**
+   * 从服务器获取OT2切图列表文件
+   * @param path OT2切图文件存储路径
+   * @param fName OT2切图文件存储名
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int getOT2CutImageList(char *path, char *fName, char statusstr[]);
+
+  /**
+   * 从服务器获取OT2模板切图列表文件
+   * @param path OT2模板切图文件存储路径
+   * @param fName OT2模板切图文件存储名
+   * @param statusstr 返回结果
+   * @return 成功返回GWAC_SUCCESS
+   */
   int getOT2TmplCutImageList(char *path, char *fName, char statusstr[]);
 
-  int sendParameters(multimap<string, string> params, char statusstr[]);
+  /**
+   * 将参数或文件上次到服务器
+   * @param url 服务器地址
+   * @param path 文件所在独立
+   * @param params 参数键值对<参数名，参数值>
+   * @param files 文件键值对<上次文件名，实际文件名>，“path+实际文件名”组成待上传文件路径
+   * @param statusstr 函数返回状态字符串
+   * @return 函数返回状态值
+   */
   int uploadDatas(const char url[], const char path[], multimap<string, string> params, multimap<string, string> files, char statusstr[]);
-
+  int sendParameters(const char url[], multimap<string, string> params, char statusstr[]);
+  int sendFiles(const char url[], const char path[], multimap<string, string> files, char statusstr[]);
 
 private:
   struct CurlCache *tmpChunk;
   int initGwacMem(char *path);
+  void initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl);
 
 };
 

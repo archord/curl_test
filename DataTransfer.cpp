@@ -13,6 +13,7 @@
 
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 static int joinStr(char *s1, char *s2, char **s3);
+static int dateToStr(struct timeval tv, char *dateStr);
 
 /**
  * 
@@ -53,7 +54,7 @@ DataTransfer::~DataTransfer() {
   }
 }
 
-void DataTransfer::initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId) {
+void DataTransfer::initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl) {
   this->groupId = groupId;
   this->unitId = unitId;
   this->ccdId = ccdId;
@@ -121,8 +122,10 @@ int DataTransfer::sendLookBackResult(char *ot2Name, int flag, char statusstr[]) 
 
   multimap<string, string> params;
   multimap<string, string> files;
+  char flagStr[10];
+  sprintf(flagStr, "%d", flag);
   params.insert(std::pair<string, string>("ot2Name", ot2Name));
-  params.insert(std::pair<string, string>("flag", flag));
+  params.insert(std::pair<string, string>("flag", flagStr));
   return uploadDatas(this->lookBackResultUrl, "", params, files, statusstr);
 }
 
@@ -146,13 +149,19 @@ int DataTransfer::sendLogMsg(ST_MSGBUF *msg, char statusstr[]) {
 
   multimap<string, string> params;
   multimap<string, string> files;
-  if (msg->msgtype == ENUM_MSG.ERROR) {
+  if (msg->msgtype == ERROR) {
     params.insert(std::pair<string, string>("msgType", "error"));
-  }else if (msg->msgtype == ENUM_MSG.STATE) {
+  } else if (msg->msgtype == STATE) {
     params.insert(std::pair<string, string>("msgType", "state"));
   }
-  params.insert(std::pair<string, string>("msgCode", msg->msgmark));
-  params.insert(std::pair<string, string>("msgDate", msg->msgmark));
+
+  char flagStr[10];
+  sprintf(flagStr, "%d", msg->msgmark);
+  params.insert(std::pair<string, string>("msgCode", flagStr));
+
+  char dateStr[40];
+  dateToStr(msg->timeval, dateStr);
+  params.insert(std::pair<string, string>("msgDate", dateStr));
   params.insert(std::pair<string, string>("msgContent", msg->msgtext));
   return uploadDatas(this->sendLogMsgUrl, "", params, files, statusstr);
 }
@@ -366,7 +375,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 
 static int joinStr(char *s1, char *s2, char **s3) {
 
-  *s3 = malloc(strlen(s1) + strlen(s2) + 1);
+  *s3 = (char*) malloc(strlen(s1) + strlen(s2) + 1);
   if (*s3 == NULL) {
     return GWAC_MALLOC_ERROR;
   }
@@ -374,4 +383,16 @@ static int joinStr(char *s1, char *s2, char **s3) {
   strcat(*s3, s2);
 
   return GWAC_SUCCESS;
-} 
+}
+
+static int dateToStr(struct timeval tv, char *dateStr) {
+
+  struct tm* ptm;
+  char time_string[40];
+  long milliseconds;
+  ptm = localtime(&tv.tv_sec);
+  strftime(time_string, sizeof (time_string), "%Y-%m-%dT%H:%M:%S", ptm);
+  milliseconds = tv.tv_usec / 1000;
+  sprintf(dateStr, "%s.%03ld\n", time_string, milliseconds);
+  return GWAC_SUCCESS;
+}

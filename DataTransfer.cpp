@@ -40,15 +40,26 @@ DataTransfer::~DataTransfer() {
   if (this->lookBackResultUrl != NULL) {
     free(this->lookBackResultUrl);
   }
-  if (this->sendOt2CutImageListUrl != NULL) {
-    free(this->sendOt2CutImageListUrl);
-  }
   if (this->ot2TmplCutImageListUrl != NULL) {
     free(this->ot2TmplCutImageListUrl);
+  }
+  if (this->sendOt2CutImageListUrl != NULL) {
+    free(this->sendOt2CutImageListUrl);
   }
   if (this->sendLogMsgUrl != NULL) {
     free(this->sendLogMsgUrl);
   }
+  if(this->sendMagCalibrationUrl !=NULL){
+    free(this->sendMagCalibrationUrl);
+  }
+  if(this->sendFitsPreviewUrl !=NULL){
+    free(this->sendFitsPreviewUrl);
+  }
+  
+  if(this->regOrigImgUrl !=NULL){
+    free(this->regOrigImgUrl);
+  }
+  
   if (this->tmpChunk != NULL) {
     free(this->tmpChunk);
   }
@@ -68,8 +79,26 @@ void DataTransfer::initParameter(char *rootUrl) {
   joinStr(rootUrl, GET_OT2_CUT_IMAGE_LIST_URL, &this->getOt2CutImageListUrl);
   joinStr(rootUrl, GET_OT2_CUT_IMAGE_REF_LIST_URL, &this->ot2TmplCutImageListUrl);
 
+  joinStr(rootUrl, REG_ORIG_IMAGE_URL, &this->regOrigImgUrl);
+  
   this->tmpChunk = (struct CurlCache *) malloc(sizeof (struct CurlCache));
 
+}
+
+int DataTransfer::regOrigImage(char *groupId, char *unitId, char *camId, char *gridId,
+        char *fieldId, char *imgName, char *imgPath, char *genTime, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  params.insert(std::pair<string, string>("groupId", groupId));
+  params.insert(std::pair<string, string>("unitId", unitId));
+  params.insert(std::pair<string, string>("camId", camId));
+  params.insert(std::pair<string, string>("gridId", gridId));
+  params.insert(std::pair<string, string>("fieldId", fieldId));
+  params.insert(std::pair<string, string>("imgName", imgName));
+  params.insert(std::pair<string, string>("imgPath", imgPath));
+  params.insert(std::pair<string, string>("genTime", genTime));
+  return uploadDatas(this->regOrigImgUrl, "", params, files, statusstr);
 }
 
 int DataTransfer::sendOT1ListFile(char *path, char *fName, char statusstr[]) {

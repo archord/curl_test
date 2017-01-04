@@ -30,13 +30,32 @@ void getDiskSize(char *path);
 void sendData();
 void testDataTransfer();
 void testLog();
+void testRegOrigImg();
 
 int main(int argc, char *argv[]) {
 
-  testLog();
-  testDataTransfer();
+  //  testLog();
+  //  testDataTransfer();
+  testRegOrigImg();
 
   return 0;
+}
+
+void testRegOrigImg() {
+  char *groupId = "g001";
+  char *unitId = "u002";
+  char *camId = "c003";
+  char *gridId = "g004";
+  char *fieldId = "f005";
+  char *imgName = "G002_Mon_objt_161219T11523152.fit";
+  char *imgPath = "/home/gwac/data/data-test";
+  char *genTime = "20170104143423888";
+
+  char statusstr[10240];
+  char *rootUrl = "http://190.168.1.161:8080/gwac/";
+  DataTransfer *gt = new DataTransfer(rootUrl);
+  gt->regOrigImage(groupId, unitId, camId, gridId, fieldId, imgName, imgPath, genTime, statusstr);
+  printf("%s\n", statusstr);
 }
 
 void testLog() {

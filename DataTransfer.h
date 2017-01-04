@@ -28,6 +28,7 @@ using namespace std;
 #define SEND_LOG_MSG_URL "commonLog.action"
 #define SEND_MAG_CALIBRATION_URL "commonFileUpload.action"
 #define SEND_FITS_PREVIEW_URL "commonFileUpload.action"
+#define REG_ORIG_IMAGE_URL "regOrigImg.action"
 
 #define GET_OT2_CUT_IMAGE_LIST_URL "commonFileUpload.action"
 #define GET_OT2_CUT_IMAGE_REF_LIST_URL "commonFileUpload.action"
@@ -52,6 +53,7 @@ public:
   char *sendLogMsgUrl;
   char *sendMagCalibrationUrl;
   char *sendFitsPreviewUrl;
+  char *regOrigImgUrl;
 
   /**
    * 
@@ -60,6 +62,21 @@ public:
   DataTransfer(char *rootUrl);
   virtual ~DataTransfer();
 
+  /**
+   * 
+   * @param groupId 组ID
+   * @param unitId 单元ID
+   * @param camId 相机ID
+   * @param gridId 天区划分模式ID
+   * @param fieldId 天区编号
+   * @param imgName原始图像的名称
+   * @param imgPath原始图像的绝对路径
+   * @param genTime 格式为yyyyMMddHHmmssSSS
+   * @param statusstr 若程序调用出错，则返回错误字符串
+   * @return 正常返回GWAC_SUCCESS（0）
+   */
+  int regOrigImage(char *groupId, char *unitId, char *camId, char *gridId,
+          char *fieldId, char *imgName, char *imgPath, char *genTime, char statusstr[]);
 
   /**
    * 向服务器发送OT1列表文件

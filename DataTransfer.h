@@ -20,15 +20,17 @@ using namespace std;
 #define URL_MAX_LENGTH 10240
 #define CURL_ERROR_BUFFER 10240
 #define ROOT_URL "http://127.0.0.1/"
-#define GET_OT1_LIST_URL "uploadAction.action"
-#define SEND_OT2_CUT_IMAGE_LIST_URL "uploadAction.action"
-#define GET_OT2_CUT_IMAGE_LIST_URL "uploadAction.action"
-#define GET_OT2_CUT_IMAGE_REF_LIST_URL "uploadAction.action"
-#define SEND_IMAGE_QUALITY_URL "uploadAction.action"
-#define SEND_LOOK_BACK_URL "uploadAction.action"
-#define SEND_LOG_MSG_URL "uploadAction.action"
-#define SEND_MAG_CALIBRATION_URL "uploadAction.action"
-#define SEND_FITS_PREVIEW_URL ""
+
+#define SEND_OT1_LIST_URL "commonFileUpload.action"
+#define SEND_OT2_CUT_IMAGE_LIST_URL "commonFileUpload.action"
+#define SEND_IMAGE_QUALITY_URL "commonFileUpload.action"
+#define SEND_LOOK_BACK_URL "otLookBack.action"
+#define SEND_LOG_MSG_URL "commonLog.action"
+#define SEND_MAG_CALIBRATION_URL "commonFileUpload.action"
+#define SEND_FITS_PREVIEW_URL "commonFileUpload.action"
+
+#define GET_OT2_CUT_IMAGE_LIST_URL "commonFileUpload.action"
+#define GET_OT2_CUT_IMAGE_REF_LIST_URL "commonFileUpload.action"
 
 struct CurlCache {
   char *memory;
@@ -37,11 +39,6 @@ struct CurlCache {
 
 class DataTransfer {
 public:
-  char *groupId;
-  char *unitId;
-  char *ccdId;
-  char *gridId;
-  char *fieldId;
 
   /**mkdir /mnt/gwacMem && sudo mount -osize=100m tmpfs /mnt/gwacMem -t tmpfs*/
   char *tmpPath; //temporary file store path, Linux Memory/Temporary File System
@@ -56,14 +53,18 @@ public:
   char *sendMagCalibrationUrl;
   char *sendFitsPreviewUrl;
 
-  DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl);
+  /**
+   * 
+   * @param rootUrl Web服务器网址，如http://190.168.1.25
+   */
+  DataTransfer(char *rootUrl);
   virtual ~DataTransfer();
 
 
   /**
    * 向服务器发送OT1列表文件
    * @param path OT1列表文件路径
-   * @param fName OT1列表文件名，命名规范：原始图像名.ot1list
+   * @param fName OT1列表文件名，命名规范：原始图像名.crsot1
    * @param statusstr 返回结果
    * @return 成功返回GWAC_SUCCESS
    */
@@ -90,7 +91,7 @@ public:
   /**
    * 向服务器发送图像参数文件
    * @param path 图像参数文件路径
-   * @param fName 图像参数文件名，图像参数文件命名规范：原始图像名.imgqlity
+   * @param fName 图像参数文件名，图像参数文件命名规范：原始图像名.imqty
    * @param statusstr 返回结果
    * @return 成功返回GWAC_SUCCESS
    */
@@ -165,7 +166,7 @@ public:
 private:
   struct CurlCache *tmpChunk;
   int initGwacMem(char *path);
-  void initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl);
+  void initParameter(char *rootUrl);
 
 };
 

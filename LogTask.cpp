@@ -6,7 +6,7 @@
  */
 
 #include "LogTask.h"
-#include "AllHeader.h"
+
 
 
 /*
@@ -19,10 +19,10 @@
  num ENUM_MSG{STATE,ERROR,OTHER};
 typedef struct
 {
-	ENUM_MSG msgtype;
-	long msgmark;
-	struct timeval timeval;
-	char msgtext[256];
+        ENUM_MSG msgtype;
+        long msgmark;
+        struct timeval timeval;
+        char msgtext[256];
 }ST_MSGBUF;
 
  *其中msgtype表示消息体是状态消息、错误消息还是其它消息
@@ -30,15 +30,9 @@ typedef struct
  *timeval表示1970年1月1日到现在的时间，使用gettimeofday获得
  *msgtext：消息描述字符串
  *
- *
  *关闭log进程时，主进程将向log进程发送SIGKILL信号
  *
- *
- *
- *
  * */
-
-
 
 /*
  *输入：
@@ -55,12 +49,8 @@ typedef struct
  * 如错误返回，则返回4000~4999内的值，具体意义自定，此外，可以赋予statusstr[]相关错误描述，字节数小于128
  *
  * */
-int InitLog(char logPath[],unsigned int redays,char statusstr[])
-{
-
-
+int InitLog(char logPath[], unsigned int redays, char statusstr[]) {
 }
-
 
 /*
  *输入:
@@ -72,13 +62,5 @@ int InitLog(char logPath[],unsigned int redays,char statusstr[])
  *	每隔sendsec秒将最新状态参数发送至数据库服务器；其它消息类型则记录该消息至log文件即可
  *
  * */
-int logTaskProc(int sendsec,int logmsgid)
-{
-
-
-
+int logTaskProc(int sendsec, int logmsgid) {
 }
-
-
-
-

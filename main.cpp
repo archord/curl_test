@@ -19,44 +19,91 @@
 #include <string> 
 #include <vector>
 
-#include <log4cxx/logger.h>
-#include <log4cxx/consoleappender.h>
-#include <log4cxx/simplelayout.h>
-#include <log4cxx/logmanager.h>
-
 #include "DataTransfer.h"
+#include "LogTask.h"
+#include "LogSysMsg.h"
 
 using namespace std;
 
 void print_time();
 void getDiskSize(char *path);
 void sendData();
+void testDataTransfer();
+void testLog();
 
 int main(int argc, char *argv[]) {
 
-//  sendData();
-  print_time();
-
+  testLog();
+  testDataTransfer();
 
   return 0;
 }
 
-void testDataTransfer(){
-  
-  char *rootPath = "/home/xy/gwac_data/test/";
-  char *ot1list = "G001_001_objt_161230T110412.crsot1"; //"G001_001_objt_161230T110412.subot1"
-  
-  char *groupId = "g001";
-  char *unitId = "u001";
-  char *ccdId = "c001";
-  char *gridId = "g001";
-  char *fieldId = "f001";
-  char statusstr[10240];
-  DataTransfer *gt = new DataTransfer(groupId, unitId, ccdId, gridId, fieldId, rootPath);
+void testLog() {
+  char *logPath = "/home/gwac/data/data-test/logs";
+  unsigned int redays = 7;
+  char statusstr[200];
 
-  printf("%s\n", statusstr);
+  LogSysMsg *log = new LogSysMsg();
+  log->InitLog(logPath, redays, statusstr);
+  log->logTaskProc(0, 0);
 }
 
+void testDataTransfer() {
+
+  char *rootUrl = "http://190.168.1.161:8080/gwac/";
+  char *rootPath = "/home/gwac/data/data-test/";
+  char *ot1list = "G002_001_objt_161230T11041213.crsot1"; //"G001_001_objt_161230T110412.subot1"
+  char *imqty = "G002_Mon_objt_161219T11523152.imqty";
+  char *impre = "G002_Mon_objt_161219T11523152.jpg";
+  char *ot2Name = "G170103_C01113";
+  int ot2Flag = 1;
+
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  ST_MSGBUF *msg = (ST_MSGBUF *) malloc(sizeof (ST_MSGBUF));
+  msg->msgtype = ERROR;
+  msg->msgmark = 4006;
+  msg->timeval = tv;
+  sprintf(msg->msgtext, "%s", "test msg upload.");
+
+  char statusstr[10240];
+  DataTransfer *gt = new DataTransfer(rootUrl);
+  printf("start\n");
+  //发送OT1列表文件
+  gt->sendOT1ListFile(rootPath, ot1list, statusstr);
+  printf("%s\n", statusstr);
+  //图像参数文件
+  gt->sendImageQualityFile(rootPath, imqty, statusstr);
+  printf("%s\n", statusstr);
+  //CCD fits预览图像
+  gt->sendFitsPreview(rootPath, impre, statusstr);
+  printf("%s\n", statusstr);
+  //OT2回看结果
+  gt->sendLookBackResult(ot2Name, ot2Flag, statusstr);
+  printf("%s\n", statusstr);
+
+  //程序日志
+  gt->sendLogMsg(msg, statusstr);
+  printf("%s\n", statusstr);
+  free(msg);
+
+  /**
+    //切图文件
+    vector<char *> ot2ims;
+    ot2ims.push_back("M170102_C00005_0019.fit");
+    ot2ims.push_back("M170102_C00005_0019.jpg");
+    ot2ims.push_back("M170102_C00005_0020.fit");
+    ot2ims.push_back("M170102_C00005_0020.jpg");
+    vector<char *> ot2imrs;
+    ot2imrs.push_back("M170102_C00005_0019_ref_20160114T113345.fit");
+    ot2imrs.push_back("M170102_C00005_0019_ref_20160114T113345.jpg");
+    gt->sendOT2CutImage(rootPath, ot2ims, statusstr);
+    printf("%s\n", statusstr);
+    gt->sendOT2CutImageRef(rootPath, ot2imrs, statusstr);
+    printf("%s\n", statusstr);
+   */
+}
 
 /**getDiskSize("/home/xy/Downloads/myresource");*/
 void getDiskSize(char *path) {
@@ -76,41 +123,22 @@ void getDiskSize(char *path) {
 
 void sendData() {
 
-  char *tpath = "/home/xy/gwac_data/test/";
+  char *rootUrl = "http://190.168.1.161:8080/gwac/commonFileUpload.action";
+  char *ot1Url = "commonFileUpload.action";
+  char *rootPath = "/home/gwac/data/data-test/";
+  char *ot1list = "G002_001_objt_161230T11041213.crsot1"; //"G001_001_objt_161230T110412.subot1"
+  char *imqty = "G002_Mon_objt_161219T11523152.imqty";
+  char *impre = "G002_Mon_objt_161219T11523152.jpg";
 
-  char *url = "http://localhost:8080/gwac/uploadAction.action";
   multimap<string, string> params;
   multimap<string, string> files;
 
-  //  params["dpmname"] = "M10";
-  //  params["date"] = "160527";
-  //  params["curprocnumber"] = "0003";
-  //  params["dfinfo"] = "/dev/sdc1      ext4  2.7T  2.4T  247G  91% /data";
-  //  params["timeSend"] = "20160527234116";
-  //  
-  //  files["configFile"] = "M5_10_160527_1_223020_0003.properties";
-  //  files["fileUpload"] = "M5_10_160527_1_223020_0003.fit.skyOT";
-  //  files["fileUpload"] = "M5_10_160527_1_223020_0003.fit.monitorParaLog";
+  params.insert(std::pair<string, string>("fileType", "crsot1"));
+  files.insert(std::pair<string, string>("fileUpload", ot1list));
 
-  params.insert(std::pair<string, string>("dpmName", "M10"));
-  params.insert(std::pair<string, string>("currentDirectory", "160527"));
-  params.insert(std::pair<string, string>("curprocnumber", "0003"));
-  params.insert(std::pair<string, string>("dfinfo", "/dev/sdc1      ext4  2.7T  2.4T  247G  91% /data"));
-  params.insert(std::pair<string, string>("timeSend", "20160527234116"));
-
-  files.insert(std::pair<string, string>("configFile", "M5_10_160527_1_223020_0003.properties"));
-  files.insert(std::pair<string, string>("fileUpload", "M5_10_160527_1_223020_0003.fit.skyOT"));
-  files.insert(std::pair<string, string>("fileUpload", "M5_10_160527_1_223020_0003.fit.monitorParaLog"));
-
-
-  char *groupId = "g001";
-  char *unitId = "u001";
-  char *ccdId = "c001";
-  char *gridId = "g001";
-  char *fieldId = "f001";
   char statusstr[10240];
-  DataTransfer *gt = new DataTransfer(groupId, unitId, ccdId, gridId, fieldId, url);
-  gt->uploadDatas(url, tpath, params, files, statusstr);
+  DataTransfer *gt = new DataTransfer(rootUrl);
+  gt->uploadDatas(rootUrl, rootPath, params, files, statusstr);
   printf("%s\n", statusstr);
 }
 

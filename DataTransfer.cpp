@@ -23,8 +23,8 @@ static int dateToStr(struct timeval tv, char *dateStr);
  * @param gridId 缺省为""
  * @param fieldId 缺省为""
  */
-DataTransfer::DataTransfer(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl) {
-  this->initParameter(groupId, unitId, ccdId, gridId, fieldId, rootUrl);
+DataTransfer::DataTransfer(char *rootUrl) {
+  this->initParameter(rootUrl);
 }
 
 DataTransfer::~DataTransfer() {
@@ -54,23 +54,19 @@ DataTransfer::~DataTransfer() {
   }
 }
 
-void DataTransfer::initParameter(char *groupId, char *unitId, char *ccdId, char *gridId, char *fieldId, char *rootUrl) {
-  this->groupId = groupId;
-  this->unitId = unitId;
-  this->ccdId = ccdId;
-  this->gridId = gridId;
-  this->fieldId = fieldId;
+void DataTransfer::initParameter(char *rootUrl) {
   this->rootUrl = rootUrl;
 
-  joinStr(rootUrl, GET_OT1_LIST_URL, &this->ot1ListUrl);
-  joinStr(rootUrl, GET_OT2_CUT_IMAGE_LIST_URL, &this->getOt2CutImageListUrl);
+  joinStr(rootUrl, SEND_OT1_LIST_URL, &this->ot1ListUrl);
   joinStr(rootUrl, SEND_IMAGE_QUALITY_URL, &this->imageQualityFileUrl);
   joinStr(rootUrl, SEND_LOOK_BACK_URL, &this->lookBackResultUrl);
   joinStr(rootUrl, SEND_OT2_CUT_IMAGE_LIST_URL, &this->sendOt2CutImageListUrl);
-  joinStr(rootUrl, GET_OT2_CUT_IMAGE_REF_LIST_URL, &this->ot2TmplCutImageListUrl);
   joinStr(rootUrl, SEND_LOG_MSG_URL, &this->sendLogMsgUrl);
   joinStr(rootUrl, SEND_MAG_CALIBRATION_URL, &this->sendMagCalibrationUrl);
   joinStr(rootUrl, SEND_FITS_PREVIEW_URL, &this->sendFitsPreviewUrl);
+
+  joinStr(rootUrl, GET_OT2_CUT_IMAGE_LIST_URL, &this->getOt2CutImageListUrl);
+  joinStr(rootUrl, GET_OT2_CUT_IMAGE_REF_LIST_URL, &this->ot2TmplCutImageListUrl);
 
   this->tmpChunk = (struct CurlCache *) malloc(sizeof (struct CurlCache));
 
@@ -80,7 +76,8 @@ int DataTransfer::sendOT1ListFile(char *path, char *fName, char statusstr[]) {
 
   multimap<string, string> params;
   multimap<string, string> files;
-  files.insert(std::pair<string, string>("ot1List", fName));
+  params.insert(std::pair<string, string>("fileType", "crsot1"));
+  files.insert(std::pair<string, string>("fileUpload", fName));
   return uploadDatas(this->ot1ListUrl, path, params, files, statusstr);
 }
 
@@ -89,9 +86,10 @@ int DataTransfer::sendOT2CutImage(char *path, vector<char *> &fNames, char statu
   multimap<string, string> params;
   multimap<string, string> files;
 
+  params.insert(std::pair<string, string>("fileType", "ot2im"));
   size_t len = fNames.size();
   for (size_t i = 0; i < len; i++) {
-    files.insert(std::pair<string, string>("cutImage", fNames[i]));
+    files.insert(std::pair<string, string>("fileUpload", fNames[i]));
   }
   return uploadDatas(this->sendOt2CutImageListUrl, path, params, files, statusstr);
 }
@@ -101,9 +99,10 @@ int DataTransfer::sendOT2CutImageRef(char *path, vector<char *> &fNames, char st
   multimap<string, string> params;
   multimap<string, string> files;
 
+  params.insert(std::pair<string, string>("fileType", "ot2imr"));
   size_t len = fNames.size();
   for (size_t i = 0; i < len; i++) {
-    files.insert(std::pair<string, string>("cutImageRef", fNames[i]));
+    files.insert(std::pair<string, string>("fileUpload", fNames[i]));
   }
   return uploadDatas(this->sendOt2CutImageListUrl, path, params, files, statusstr);
 }
@@ -112,8 +111,27 @@ int DataTransfer::sendImageQualityFile(char *path, char *fName, char statusstr[]
 
   multimap<string, string> params;
   multimap<string, string> files;
-  files.insert(std::pair<string, string>("imgQuality", fName));
+  params.insert(std::pair<string, string>("fileType", "imqty"));
+  files.insert(std::pair<string, string>("fileUpload", fName));
   return uploadDatas(this->imageQualityFileUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendFitsPreview(char *path, char *fName, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  params.insert(std::pair<string, string>("fileType", "impre"));
+  files.insert(std::pair<string, string>("fileUpload", fName));
+  return uploadDatas(this->sendFitsPreviewUrl, path, params, files, statusstr);
+}
+
+int DataTransfer::sendMagCalibrationFile(char *path, char *fName, char statusstr[]) {
+
+  multimap<string, string> params;
+  multimap<string, string> files;
+  params.insert(std::pair<string, string>("fileType", "magclb"));
+  files.insert(std::pair<string, string>("fileUpload", fName));
+  return uploadDatas(this->sendMagCalibrationUrl, path, params, files, statusstr);
 }
 
 //lookBackResultUrl
@@ -124,31 +142,16 @@ int DataTransfer::sendLookBackResult(char *ot2Name, int flag, char statusstr[]) 
   multimap<string, string> files;
   char flagStr[10];
   sprintf(flagStr, "%d", flag);
-  params.insert(std::pair<string, string>("ot2Name", ot2Name));
+  params.insert(std::pair<string, string>("ot2name", ot2Name));
   params.insert(std::pair<string, string>("flag", flagStr));
   return uploadDatas(this->lookBackResultUrl, "", params, files, statusstr);
-}
-
-int DataTransfer::sendFitsPreview(char *path, char *fName, char statusstr[]) {
-
-  multimap<string, string> params;
-  multimap<string, string> files;
-  files.insert(std::pair<string, string>("fitsPreview", fName));
-  return uploadDatas(this->sendFitsPreviewUrl, path, params, files, statusstr);
-}
-
-int DataTransfer::sendMagCalibrationFile(char *path, char *fName, char statusstr[]) {
-
-  multimap<string, string> params;
-  multimap<string, string> files;
-  files.insert(std::pair<string, string>("magCalibration", fName));
-  return uploadDatas(this->sendMagCalibrationUrl, path, params, files, statusstr);
 }
 
 int DataTransfer::sendLogMsg(ST_MSGBUF *msg, char statusstr[]) {
 
   multimap<string, string> params;
   multimap<string, string> files;
+  params.insert(std::pair<string, string>("logType", "logchb"));
   if (msg->msgtype == ERROR) {
     params.insert(std::pair<string, string>("msgType", "error"));
   } else if (msg->msgtype == STATE) {
@@ -187,7 +190,7 @@ int DataTransfer::uploadDatas(const char url[],
   CHECK_STATUS_STR_IS_NULL(statusstr);
   /*检测输入参数是否为空*/
   CHECK_STRING_NULL_OR_EMPTY(url, "url");
-  CHECK_STRING_NULL_OR_EMPTY(path, "path");
+  //  CHECK_STRING_NULL_OR_EMPTY(path, "path");
 
   /*检测传输数据是否为空*/
   if (params.empty() && files.empty()) {
@@ -209,11 +212,6 @@ int DataTransfer::uploadDatas(const char url[],
   tmpChunk->size = 0; /* no data at this point */
 
   curl_global_init(CURL_GLOBAL_ALL);
-  curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "groupId", CURLFORM_COPYCONTENTS, groupId, CURLFORM_END);
-  curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "unitId", CURLFORM_COPYCONTENTS, unitId, CURLFORM_END);
-  curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "ccdId", CURLFORM_COPYCONTENTS, ccdId, CURLFORM_END);
-  curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "gridId", CURLFORM_COPYCONTENTS, gridId, CURLFORM_END);
-  curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "fieldId", CURLFORM_COPYCONTENTS, fieldId, CURLFORM_END);
 
   for (multimap<string, string>::iterator iter = params.begin(); iter != params.end(); iter++) {
     curl_formadd(&formpost,
@@ -226,6 +224,7 @@ int DataTransfer::uploadDatas(const char url[],
   for (multimap<string, string>::iterator iter = files.begin(); iter != files.end(); iter++) {
     string filePath(path, path + strlen(path));
     filePath.append(iter->second.data());
+    cout << iter->first.data() << ":" << filePath.data() << endl;
     curl_formadd(&formpost,
             &lastptr,
             CURLFORM_COPYNAME, iter->first.data(),
@@ -233,20 +232,8 @@ int DataTransfer::uploadDatas(const char url[],
             CURLFORM_END);
   }
 
-#ifdef DEBUG
-  string conStr = "";
-  conStr.append("{groupId:");
-  conStr.append(groupId);
-  conStr.append(",unitId:");
-  conStr.append(unitId);
-  conStr.append(",ccdId:");
-  conStr.append(ccdId);
-  conStr.append(",gridId:");
-  conStr.append(gridId);
-  conStr.append(",fieldId:");
-  conStr.append(fieldId);
-  conStr.append(",");
-
+#ifdef DEBUG  
+  string conStr = "{";
   for (multimap<string, string>::iterator iter = params.begin(); iter != params.end(); iter++) {
     conStr.append(iter->first);
     conStr.append(":");
@@ -264,6 +251,7 @@ int DataTransfer::uploadDatas(const char url[],
     conStr.append(",");
   }
   conStr.append("}");
+  cout << "conStr: " << conStr << endl;
 #endif
 
   curlSession = curl_easy_init();
@@ -274,11 +262,12 @@ int DataTransfer::uploadDatas(const char url[],
     memset(reqErrorBuf, 0, sizeof (char)*CURL_ERROR_BUFFER);
 
 #ifdef DEBUG
+    curl_easy_setopt(curlSession, CURLOPT_VERBOSE, 1);
     char *encodeParm = curl_easy_escape(curlSession, conStr.data(), conStr.length());
     char *fullUrl = (char*) malloc(sizeof (char)*URL_MAX_LENGTH);
     memset(fullUrl, 0, sizeof (char)*URL_MAX_LENGTH);
     sprintf(fullUrl, "%s?rqp=%s", url, encodeParm);
-    cout << fullUrl << endl;
+    cout << "fullUrl: " << fullUrl << endl;
     curl_free(encodeParm);
 #else
     char *fullUrl = (char*) malloc(sizeof (char)*URL_MAX_LENGTH);
@@ -393,6 +382,6 @@ static int dateToStr(struct timeval tv, char *dateStr) {
   ptm = localtime(&tv.tv_sec);
   strftime(time_string, sizeof (time_string), "%Y-%m-%dT%H:%M:%S", ptm);
   milliseconds = tv.tv_usec / 1000;
-  sprintf(dateStr, "%s.%03ld\n", time_string, milliseconds);
+  sprintf(dateStr, "%s.%03ld", time_string, milliseconds);
   return GWAC_SUCCESS;
 }

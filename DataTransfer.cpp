@@ -80,9 +80,71 @@ void DataTransfer::initParameter(char *rootUrl) {
   joinStr(rootUrl, GET_OT2_CUT_IMAGE_REF_LIST_URL, &this->ot2TmplCutImageListUrl);
 
   joinStr(rootUrl, REG_ORIG_IMAGE_URL, &this->regOrigImgUrl);
+  joinStr(rootUrl, UPLOAD_CCD_VACUUM, &this->updateVacuumUrl);
+  joinStr(rootUrl, UPLOAD_CCD_TEMPERATURE, &this->updateTemperatureUrl);
   
   this->tmpChunk = (struct CurlCache *) malloc(sizeof (struct CurlCache));
 
+}
+
+/**
+ * 上传CCD温度参数
+ * @param online, if is on line, set online to 1; if is off line, set online to 0;
+ */
+int DataTransfer::uploadTemperature(char *groupId, char *unitId, char *camId, int online,
+        float voltage, float current, float thot, float coolget, float coolset, char *time, char statusstr[]) {
+
+  char tstr[64];
+  multimap<string, string> params;
+  multimap<string, string> files;
+  params.insert(std::pair<string, string>("groupId", groupId));
+  params.insert(std::pair<string, string>("unitId", unitId));
+  params.insert(std::pair<string, string>("camId", camId));
+  char *onlineStr = "true";
+  if(online==0){
+    onlineStr = "false";
+  }
+  params.insert(std::pair<string, string>("online", onlineStr));
+  sprintf(tstr, "%f", voltage);
+  params.insert(std::pair<string, string>("voltage", tstr));
+  sprintf(tstr, "%f", current);
+  params.insert(std::pair<string, string>("current", tstr));
+  sprintf(tstr, "%f", thot);
+  params.insert(std::pair<string, string>("thot", tstr));
+  sprintf(tstr, "%f", coolget);
+  params.insert(std::pair<string, string>("coolget", tstr));
+  sprintf(tstr, "%f", coolset);
+  params.insert(std::pair<string, string>("coolset", tstr));
+  params.insert(std::pair<string, string>("time", time));
+  return uploadDatas(this->updateTemperatureUrl, "", params, files, statusstr);
+}
+
+/**
+ * 上传CCD真空度参数
+ * @param online, if is on line, set online to 1; if is off line, set online to 0;
+ */
+int DataTransfer::uploadVacuum(char *groupId, char *unitId, char *camId, int online,
+        float voltage, float current, float pressure, char *time, char statusstr[]) {
+
+  char tstr[64];
+  multimap<string, string> params;
+  multimap<string, string> files;
+  params.insert(std::pair<string, string>("groupId", groupId));
+  params.insert(std::pair<string, string>("unitId", unitId));
+  params.insert(std::pair<string, string>("camId", camId));
+  char *onlineStr = "true";
+  if(online==0){
+    onlineStr = "false";
+  }
+  params.insert(std::pair<string, string>("online", onlineStr));
+  sprintf(tstr, "%f", voltage);
+  params.insert(std::pair<string, string>("voltage", tstr));
+  sprintf(tstr, "%f", current);
+  params.insert(std::pair<string, string>("current", tstr));
+  sprintf(tstr, "%f", pressure);
+  params.insert(std::pair<string, string>("pressure", tstr));
+  params.insert(std::pair<string, string>("time", time));
+  return uploadDatas(this->updateVacuumUrl, "", params, files, statusstr);
 }
 
 int DataTransfer::regOrigImage(char *groupId, char *unitId, char *camId, char *gridId,
@@ -253,7 +315,7 @@ int DataTransfer::uploadDatas(const char url[],
   for (multimap<string, string>::iterator iter = files.begin(); iter != files.end(); iter++) {
     string filePath(path, path + strlen(path));
     filePath.append(iter->second.data());
-    cout << iter->first.data() << ":" << filePath.data() << endl;
+    //cout << iter->first.data() << ":" << filePath.data() << endl;
     curl_formadd(&formpost,
             &lastptr,
             CURLFORM_COPYNAME, iter->first.data(),

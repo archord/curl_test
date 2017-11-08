@@ -31,28 +31,69 @@ void sendData();
 void testDataTransfer();
 void testLog();
 void testRegOrigImg();
+void  testUploadTemperature();
+void  testUploadVacuum();
 
 int main(int argc, char *argv[]) {
 
-  //  testLog();
+  testUploadTemperature();
+  testUploadVacuum();
+//  testRegOrigImg();
   //  testDataTransfer();
-  testRegOrigImg();
+  //    testLog();
 
   return 0;
+}
+
+void testUploadTemperature() {
+  char *groupId = "g001";
+  char *unitId = "u002";
+  char *camId = "045";
+  int online = 0;
+  float voltage = 10.3;
+  float current = 12.3;
+  float thot = -40;
+  float coolget = -35;
+  float coolset = -25;
+  char *time = "2017-12-10T11:50:25";
+
+  char statusstr[10240];
+  char *rootUrl = "http://10.36.1.77:8080/gwebend/";
+  DataTransfer *gt = new DataTransfer(rootUrl);
+  gt->uploadTemperature(groupId, unitId, camId, online, voltage, current, thot, coolget, coolset, time, statusstr);
+  printf("%s\n", statusstr);
+}
+
+void testUploadVacuum() {
+  char *groupId = "g001";
+  char *unitId = "u002";
+  char *camId = "044";
+  int online = 0;
+  float voltage = 10.3;
+  float current = 12.3;
+  float pressure = 1000;
+  char *time = "2016-12-10T10:30:29";
+
+  char statusstr[10240];
+  char *rootUrl = "http://10.36.1.77:8080/gwebend/";
+  DataTransfer *gt = new DataTransfer(rootUrl);
+  gt->uploadVacuum(groupId, unitId, camId, online, voltage, current, pressure, time, statusstr);
+  printf("%s\n", statusstr);
 }
 
 void testRegOrigImg() {
   char *groupId = "g001";
   char *unitId = "u002";
-  char *camId = "c003";
+  char *camId = "c007";
   char *gridId = "g004";
   char *fieldId = "f005";
-  char *imgName = "G002_Mon_objt_161219T11523152.fit";
+  char *imgName = "G002_Mon_objt_162319T11233342.fit";
   char *imgPath = "/home/gwac/data/data-test";
   char *genTime = "20170104143423888";
 
   char statusstr[10240];
-  char *rootUrl = "http://190.168.1.161:8080/gwac/";
+  char *rootUrl = "http://190.168.1.177:8080/gwac/";
+  //    char *rootUrl = "http://190.168.1.27/";
   DataTransfer *gt = new DataTransfer(rootUrl);
   gt->regOrigImage(groupId, unitId, camId, gridId, fieldId, imgName, imgPath, genTime, statusstr);
   printf("%s\n", statusstr);
@@ -70,7 +111,8 @@ void testLog() {
 
 void testDataTransfer() {
 
-  char *rootUrl = "http://190.168.1.161:8080/gwac/";
+  char *rootUrl = "http://190.168.1.177:8080/gwac/";
+  //    char *rootUrl = "http://190.168.1.27/";
   char *rootPath = "/home/gwac/data/data-test/";
   char *ot1list = "G002_001_objt_161230T11041213.crsot1"; //"G001_001_objt_161230T110412.subot1"
   char *imqty = "G002_Mon_objt_161219T11523152.imqty";
@@ -81,47 +123,47 @@ void testDataTransfer() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   ST_MSGBUF *msg = (ST_MSGBUF *) malloc(sizeof (ST_MSGBUF));
-  msg->msgtype = ERROR;
-  msg->msgmark = 4006;
+  msg->msgtype = STATE;
+  msg->msgmark = 4008;
   msg->timeval = tv;
-  sprintf(msg->msgtext, "%s", "test msg upload.");
+  sprintf(msg->msgtext, "%s", "test msg upload3.");
 
   char statusstr[10240];
   DataTransfer *gt = new DataTransfer(rootUrl);
   printf("start\n");
   //发送OT1列表文件
-  gt->sendOT1ListFile(rootPath, ot1list, statusstr);
-  printf("%s\n", statusstr);
+  //  gt->sendOT1ListFile(rootPath, ot1list, statusstr);
+  //  printf("%s\n", statusstr);
   //图像参数文件
-  gt->sendImageQualityFile(rootPath, imqty, statusstr);
-  printf("%s\n", statusstr);
+  //  gt->sendImageQualityFile(rootPath, imqty, statusstr);
+  //  printf("%s\n", statusstr);
   //CCD fits预览图像
   gt->sendFitsPreview(rootPath, impre, statusstr);
   printf("%s\n", statusstr);
-  //OT2回看结果
-  gt->sendLookBackResult(ot2Name, ot2Flag, statusstr);
-  printf("%s\n", statusstr);
+  //  //OT2回看结果
+  //  gt->sendLookBackResult(ot2Name, ot2Flag, statusstr);
+  //  printf("%s\n", statusstr);
 
   //程序日志
-  gt->sendLogMsg(msg, statusstr);
-  printf("%s\n", statusstr);
+  //  gt->sendLogMsg(msg, statusstr);
+  //  printf("%s\n", statusstr);
   free(msg);
 
-  /**
-    //切图文件
-    vector<char *> ot2ims;
-    ot2ims.push_back("M170102_C00005_0019.fit");
-    ot2ims.push_back("M170102_C00005_0019.jpg");
-    ot2ims.push_back("M170102_C00005_0020.fit");
-    ot2ims.push_back("M170102_C00005_0020.jpg");
-    vector<char *> ot2imrs;
-    ot2imrs.push_back("M170102_C00005_0019_ref_20160114T113345.fit");
-    ot2imrs.push_back("M170102_C00005_0019_ref_20160114T113345.jpg");
-    gt->sendOT2CutImage(rootPath, ot2ims, statusstr);
-    printf("%s\n", statusstr);
-    gt->sendOT2CutImageRef(rootPath, ot2imrs, statusstr);
-    printf("%s\n", statusstr);
-   */
+  /**   */
+  //切图文件
+  //  vector<char *> ot2ims;
+  //  ot2ims.push_back("M170102_C00005_0019.fit");
+  //  ot2ims.push_back("M170102_C00005_0019.jpg");
+  //  ot2ims.push_back("M170102_C00005_0020.fit");
+  //  ot2ims.push_back("M170102_C00005_0020.jpg");
+  //  vector<char *> ot2imrs;
+  //  ot2imrs.push_back("M170102_C00005_0019_ref_20160114T113345.fit");
+  //  ot2imrs.push_back("M170102_C00005_0019_ref_20160114T113345.jpg");
+  //  gt->sendOT2CutImage(rootPath, ot2ims, statusstr);
+  //  printf("%s\n", statusstr);
+  //  gt->sendOT2CutImageRef(rootPath, ot2imrs, statusstr);
+  //  printf("%s\n", statusstr);
+
 }
 
 /**getDiskSize("/home/xy/Downloads/myresource");*/

@@ -33,6 +33,9 @@ using namespace std;
 #define GET_OT2_CUT_IMAGE_LIST_URL "commonFileUpload.action"
 #define GET_OT2_CUT_IMAGE_REF_LIST_URL "commonFileUpload.action"
 
+#define UPLOAD_CCD_VACUUM "uploadVacuum.action"
+#define UPLOAD_CCD_TEMPERATURE "uploadTemperature.action"
+
 struct CurlCache {
   char *memory;
   size_t size;
@@ -54,6 +57,8 @@ public:
   char *sendMagCalibrationUrl;
   char *sendFitsPreviewUrl;
   char *regOrigImgUrl;
+  char *updateVacuumUrl;
+  char *updateTemperatureUrl;
 
   /**
    * 
@@ -61,6 +66,19 @@ public:
    */
   DataTransfer(char *rootUrl);
   virtual ~DataTransfer();
+
+  /**
+   * 上传CCD温度参数
+   * @param online, if is on line, set online to 1; if is off line, set online to 0;
+   */
+  int uploadTemperature(char *groupId, char *unitId, char *camId, int online,
+          float voltage, float current, float thot, float coolget, float coolset, char *time, char statusstr[]);
+  /**
+   * 上传CCD真空度参数
+   * @param online, if is on line, set online to 1; if is off line, set online to 0;
+   */
+  int uploadVacuum(char *groupId, char *unitId, char *camId, int online,
+          float voltage, float current, float pressure, char *time, char statusstr[]);
 
   /**
    * 

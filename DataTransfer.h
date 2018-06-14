@@ -36,6 +36,21 @@ using namespace std;
 #define UPLOAD_CCD_VACUUM "uploadVacuum.action"
 #define UPLOAD_CCD_TEMPERATURE "uploadTemperature.action"
 
+#define UPLOAD_FOCUS "uploadFocusStatus.action"
+#define UPLOAD_MOUNT_STATUS "uploadMountStatus.action"
+#define UPLOAD_CAMERA_STATUS "uploadCameraStatus.action"
+#define UPLOAD_OBS_CTL_SYS_STATUS "uploadObsCtlSysStatus.action"
+
+/**
+ * LINUX curl命令上传测试
+curl http://10.36.1.77:8080/gwebend/uploadFocusStatus.action -F fbfId=4242975 -F focus=98 -F cameraId=001
+curl http://10.36.1.77:8080/gwebend/uploadMountStatus.action -F groupId=001 -F unitId=003 -F utc=2018-06-14T08:11:30 -F state=1 -F errcode=123 -F ra=60.1 -F dec=60.2 -F objRa=60.3 -F objDec=60.4
+curl http://10.36.1.77:8080/gwebend/uploadCameraStatus.action  -F groupId=001 -F unitId=003 -F camId=032 -F utc=2018-06-14T08:11:30 -F mcState=1 -F focus=123 -F coolget=-60 -F filter=R -F state=2 -F errcode=5 -F imgType=obj -F objName=G180614_C00012 -F frmNo=120 -F fileName='abc.fit'
+curl http://10.36.1.77:8080/gwebend/uploadObsCtlSysStatus.action  -F groupId=001 -F unitId=003 -F utc=2018-06-14T08:11:30 -F state=1 -F opSn=128 -F opTime=2018-06-14T08:19:30  -F mountStatus=12 -F cameraStatus=23
+curl http://10.36.1.77:8080/gwebend/uploadTemperature.action -F groupId=001 -F unitId=003 -F camId=032 -F utc=2018-06-14T08:11:30 -F coolget=-58 -F coolset=-60 -F thot=-20 -F voltage=11.9 -F current=10.1
+curl http://10.36.1.77:8080/gwebend/uploadVacuum.action  -F groupId=001 -F unitId=003 -F camId=032 -F utc=2018-06-14T08:11:30 -F pressure=38 -F voltage=11.9 -F current=10.1
+ */
+
 struct CurlCache {
   char *memory;
   size_t size;
@@ -59,7 +74,11 @@ public:
   char *regOrigImgUrl;
   char *updateVacuumUrl;
   char *updateTemperatureUrl;
-
+  char *updateFocusUrl;
+  char *updateMountStatusUrl;
+  char *updateCameraStatusUrl;
+  char *updateObsCtlSysStatusUrl;
+  
   /**
    * 
    * @param rootUrl Web服务器网址，如http://190.168.1.25
@@ -67,17 +86,43 @@ public:
   DataTransfer(char *rootUrl);
   virtual ~DataTransfer();
 
+  /***
+   * 上传调焦信息
+   * @param 
+   */
+  int uploadFocus(int fbfId, int focus, int cameraId, char statusstr[]);
+  /**
+   * 上传转台状态
+   * @param 
+   */
+  int uploadMountStatus(char *groupId, char *unitId, char *utc, int state,
+        int errcode, float ra, float dec, float objRa, float objDec, char statusstr[]);
+
+  /**
+   * 上传相机状态
+   * @param 
+   */
+  int uploadCameraStatus(char *groupId, char *unitId, char *camId, char *utc, int mcState,
+        int focus, float coolget, char* filter, int state, int errcode, char* imgType,
+        char *objName, int frmNo, char *fileName, char statusstr[]);
+  /**
+   * 上传观测控制系统状态
+   * @param 
+   */
+  int uploadObsCtlSysStatus(char *groupId, char *unitId, char *utc, int state,
+        int opSn, char* opTime, int mountStatus, int cameraStatus, char statusstr[]);
+  
   /**
    * 上传CCD温度参数
    * @param online, if is on line, set online to 1; if is off line, set online to 0;
    */
-  int uploadTemperature(char *groupId, char *unitId, char *camId, int online,
+  int uploadTemperature(char *groupId, char *unitId, char *camId,
           float voltage, float current, float thot, float coolget, float coolset, char *time, char statusstr[]);
   /**
    * 上传CCD真空度参数
    * @param online, if is on line, set online to 1; if is off line, set online to 0;
    */
-  int uploadVacuum(char *groupId, char *unitId, char *camId, int online,
+  int uploadVacuum(char *groupId, char *unitId, char *camId,
           float voltage, float current, float pressure, char *time, char statusstr[]);
 
   /**
